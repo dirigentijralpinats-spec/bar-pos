@@ -3,111 +3,150 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Cassa Bar Opicina Alpina Baseball</title>
+  <title>Cassa Bar Baseball</title>
   
-  <!-- Tailwind CSS per la grafica responsive -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- FontAwesome per le icone -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SDK Google Login -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
-    /* Disabilita lo zoom su doppio tap e selezioni accidentali di testo */
     button, div { 
       touch-action: manipulation; 
       -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
   </style>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col font-sans select-none">
 
-  <!-- CONFIGURAZIONE BACKEND -->
   <script>
-    // Incolla qui l'URL dell'API generata dal deploy di Google Apps Script
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwSUDM4qiukWx7a4QyOnRYZHVCBxmkjL-J5dnDnUsCgdcl9N1HI_LK57-SWNbdcwBCU/exec";
+    const GOOGLE_CLIENT_ID = "754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com";
   </script>
+
+  <!-- SCHERMATA LOGIN (Se non autenticato) -->
+  <div id="screen-login" class="fixed inset-0 bg-blue-900 z-50 flex flex-col items-center justify-center p-4 text-white">
+    <div class="bg-white text-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+      <i class="fa-solid fa-baseball text-5xl text-amber-500 mb-3"></i>
+      <h1 class="text-2xl font-black mb-1">Bar Baseball</h1>
+      <p class="text-xs text-gray-500 mb-6">Accedi con il tuo account Google autorizzato</p>
+      
+      <div id="g_id_onload"
+           data-client_id=""
+           data-callback="gestisciGoogleLogin"
+           data-auto_prompt="false">
+      </div>
+      
+      <div class="flex justify-center">
+        <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with"></div>
+      </div>
+
+      <div id="login-error" class="text-red-600 text-xs mt-4 font-bold hidden"></div>
+    </div>
+  </div>
 
   <!-- HEADER -->
   <header class="bg-blue-800 text-white p-3 shadow-md flex justify-between items-center shrink-0">
     <div class="flex items-center space-x-2">
       <i class="fa-solid fa-baseball text-xl text-amber-400"></i>
-      <h1 class="font-bold text-lg leading-none">Alpina Baseball - Bar Opicina</h1>
+      <div>
+        <h1 class="font-bold text-sm leading-none">Bar Baseball</h1>
+        <span id="user-email-display" class="text-[10px] text-blue-200 block truncate max-w-[130px]"></span>
+      </div>
     </div>
-    <div class="flex items-center space-x-2">
-      <button onclick="caricaProdotti()" class="text-xs bg-blue-700 hover:bg-blue-600 text-white py-1.5 px-2.5 rounded-lg font-semibold flex items-center gap-1 active:scale-95 transition">
-        <i class="fa-solid fa-rotate" id="icon-sync"></i>
-        <span>Aggiorna</span>
+    <div class="flex items-center space-x-1.5">
+      <button id="btn-admin-panel" onclick="apriPannelloAdmin()" class="hidden text-xs bg-amber-500 hover:bg-amber-600 text-gray-900 py-1.5 px-2 rounded-lg font-bold items-center gap-1">
+        <i class="fa-solid fa-user-shield"></i> Utenti
       </button>
-      <button onclick="resetCarrello()" class="text-xs bg-red-600 hover:bg-red-700 text-white py-1.5 px-2.5 rounded-lg font-semibold active:scale-95 transition">
-        Azzera
+      <button onclick="caricaProdotti()" class="text-xs bg-blue-700 hover:bg-blue-600 text-white py-1.5 px-2 rounded-lg font-semibold flex items-center gap-1">
+        <i class="fa-solid fa-rotate" id="icon-sync"></i>
+      </button>
+      <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 text-white py-1.5 px-2 rounded-lg font-semibold">
+        <i class="fa-solid fa-right-from-bracket"></i>
       </button>
     </div>
   </header>
 
-  <!-- LISTA PRODOTTI (Area Scrollabile) -->
+  <!-- LISTA PRODOTTI -->
   <main id="lista-prodotti" class="flex-1 overflow-y-auto p-3 space-y-4 pb-36">
     <div class="flex flex-col items-center justify-center h-48 text-gray-500">
       <i class="fa-solid fa-spinner fa-spin text-3xl mb-2 text-blue-600"></i>
-      <p class="text-sm">Caricamento prodotti dal Foglio Google...</p>
+      <p class="text-sm">Caricamento prodotti...</p>
     </div>
   </main>
 
-  <!-- BARRA INFERIORE / CARRELLO (Fisso in basso) -->
+  <!-- BOTTOM BAR / CARRELLO -->
   <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-xl p-3 flex flex-col space-y-2 z-40">
-    
-    <!-- Anteprima scontrino corrente -->
     <div id="anteprima-carrello" class="flex gap-2 overflow-x-auto py-1 text-xs text-gray-600 min-h-[32px] items-center">
       <span class="italic text-gray-400">Nessun articolo nel carrello</span>
     </div>
-
-    <!-- Totale e Bottone Incassa -->
     <div class="flex items-center justify-between gap-3">
       <div>
         <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider block">Totale</span>
         <div id="totale-display" class="text-2xl font-black text-green-600">€ 0,00</div>
       </div>
-      <button onclick="apriCassa()" id="btn-incassa" disabled class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg text-center text-lg disabled:opacity-30 disabled:cursor-not-allowed active:scale-98 transition flex items-center justify-center gap-2">
+      <button onclick="apriCassa()" id="btn-incassa" disabled class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg text-center text-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2">
         <i class="fa-solid fa-cash-register"></i>
         <span>INCASSA</span>
       </button>
     </div>
   </footer>
 
-  <!-- MODAL RIEPILOGO & VENDITA -->
+  <!-- MODAL RIEPILOGO INCASSO -->
   <div id="modal-cassa" class="fixed inset-0 bg-black/60 hidden items-end sm:items-center justify-center p-0 sm:p-4 z-50 backdrop-blur-sm">
     <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-4 flex flex-col max-h-[90vh] shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3 mb-2">
         <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
           <i class="fa-solid fa-receipt text-blue-600"></i> Riepilogo Scontrino
         </h3>
-        <button onclick="chiudiModal()" class="text-gray-400 hover:text-gray-600 text-lg">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <button onclick="chiudiModal('modal-cassa')" class="text-gray-400 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      
-      <!-- Lista articoli con tasti + / - -->
-      <div id="dettaglio-ordine" class="overflow-y-auto flex-1 divide-y text-sm mb-3 max-h-56">
-        <!-- Generato via JavaScript -->
+      <div id="dettaglio-ordine" class="overflow-y-auto flex-1 divide-y text-sm mb-3 max-h-56"></div>
+      <div class="bg-gray-50 p-3 rounded-xl mb-4 border border-gray-100 flex justify-between items-center font-bold text-lg text-gray-800">
+        <span>Totale da Pagare:</span>
+        <span id="modal-totale" class="text-2xl text-green-600 font-black">€ 0,00</span>
+      </div>
+      <button onclick="concludiOrdine()" id="btn-conferma" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold text-lg shadow-md flex items-center justify-center gap-2 mb-2">
+        <i class="fa-solid fa-check"></i> <span>CONFERMA INCASSO</span>
+      </button>
+      <button onclick="chiudiModal('modal-cassa')" class="w-full bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm">Torna Indietro</button>
+    </div>
+  </div>
+
+  <!-- MODAL PANNELLO ADMIN GESTIONE UTENTI -->
+  <div id="modal-admin" class="fixed inset-0 bg-black/60 hidden items-end sm:items-center justify-center p-0 sm:p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-4 flex flex-col max-h-[90vh] shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-3 mb-3">
+        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-users-gear text-amber-500"></i> Gestione Utenze
+        </h3>
+        <button onclick="chiudiModal('modal-admin')" class="text-gray-400 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <!-- Totale -->
-      <div class="bg-gray-50 p-3 rounded-xl mb-4 border border-gray-100">
-        <div class="flex justify-between items-center font-bold text-lg text-gray-800">
-          <span>Totale da Pagare:</span>
-          <span id="modal-totale" class="text-2xl text-green-600 font-black">€ 0,00</span>
+      <!-- Form aggiunta utente -->
+      <form onsubmit="salvaUtente(event)" class="bg-gray-50 p-3 rounded-xl mb-4 space-y-2 border">
+        <div class="text-xs font-bold text-gray-600 uppercase">Aggiungi / Modifica Utente</div>
+        <input type="email" id="new-user-email" required placeholder="Email Google (es. nome@gmail.com)" class="w-full text-xs p-2.5 border rounded-lg bg-white">
+        <div class="flex gap-2">
+          <select id="new-user-role" class="flex-1 text-xs p-2.5 border rounded-lg bg-white font-semibold">
+            <option value="operatore">Operatore (Solo cassa)</option>
+            <option value="admin">Admin (Gestione utenti)</option>
+          </select>
+          <button type="submit" class="bg-blue-600 text-white text-xs font-bold px-4 rounded-lg">Salva</button>
         </div>
+      </form>
+
+      <!-- Lista Utenti -->
+      <div class="text-xs font-bold text-gray-600 uppercase mb-2">Utenti Autorizzati</div>
+      <div id="lista-utenti-admin" class="overflow-y-auto flex-1 divide-y text-xs mb-3 max-h-48 border rounded-xl p-2 bg-white">
+        <!-- Caricato via JS -->
       </div>
 
-      <!-- Pulsanti Conferma / Annulla -->
-      <div class="flex flex-col gap-2">
-        <button onclick="concludiOrdine()" id="btn-conferma" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold text-lg active:scale-98 transition shadow-md flex items-center justify-center gap-2">
-          <i class="fa-solid fa-check"></i>
-          <span>CONFERMA E SALVA</span>
-        </button>
-        <button onclick="chiudiModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-xl font-semibold text-sm">
-          Torna Indietro
-        </button>
-      </div>
+      <button onclick="chiudiModal('modal-admin')" class="w-full bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm">Chiudi</button>
     </div>
   </div>
 
@@ -115,71 +154,91 @@
   <script>
     let listinoProdotti = [];
     let carrello = {};
+    let currentUser = null;
+    let userToken = null;
 
     document.addEventListener('DOMContentLoaded', () => {
-      caricaProdotti();
+      // Inizializza Client ID Google
+      const gEl = document.getElementById('g_id_onload');
+      if (gEl) gEl.setAttribute('data-client_id', GOOGLE_CLIENT_ID);
+
+      // Controlla se c'è un token in sessione
+      userToken = sessionStorage.getItem('bar_user_token');
+      if (userToken) {
+        validaSessione();
+      }
     });
 
-    function vibra() {
-      if ('vibrate' in navigator) navigator.vibrate(25);
+    function vibra(d = 25) { if ('vibrate' in navigator) navigator.vibrate(d); }
+
+    // Callback scattata dopo il Login Google
+    async function gestisciGoogleLogin(response) {
+      userToken = response.credential;
+      sessionStorage.setItem('bar_user_token', userToken);
+      await validaSessione();
     }
 
-    // Carica i prodotti esclusivamente dal Google Sheet (o dalla cache sincronizzata)
+    async function validaSessione() {
+      const errBox = document.getElementById('login-error');
+      errBox.classList.add('hidden');
+
+      try {
+        const res = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'login', token: userToken })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          currentUser = data.utente;
+          document.getElementById('screen-login').classList.add('hidden');
+          document.getElementById('user-email-display').innerText = currentUser.email;
+
+          if (currentUser.ruolo === 'admin') {
+            document.getElementById('btn-admin-panel').classList.remove('hidden');
+            document.getElementById('btn-admin-panel').classList.add('flex');
+          }
+
+          caricaProdotti();
+        } else {
+          throw new Error(data.message || 'Accesso non autorizzato');
+        }
+      } catch (err) {
+        errBox.innerText = err.message;
+        errBox.classList.remove('hidden');
+        sessionStorage.removeItem('bar_user_token');
+        document.getElementById('screen-login').classList.remove('hidden');
+      }
+    }
+
+    function logout() {
+      sessionStorage.removeItem('bar_user_token');
+      location.reload();
+    }
+
     async function caricaProdotti() {
       const iconSync = document.getElementById('icon-sync');
       if (iconSync) iconSync.classList.add('fa-spin');
 
       try {
-        if (!WEB_APP_URL || WEB_APP_URL.includes("INSERISCI_QUI")) {
-          throw new Error("URL Apps Script non ancora inserito. Configura la variabile WEB_APP_URL.");
-        }
-
         const response = await fetch(`${WEB_APP_URL}?action=getProdotti`);
         const result = await response.json();
-
-        if (result.status === 'success' && Array.isArray(result.prodotti)) {
+        if (result.status === 'success') {
           listinoProdotti = result.prodotti;
-          // Salva in cache locale per il supporto offline temporaneo durante la sessione
-          localStorage.setItem('bar_listino_cache', JSON.stringify(listinoProdotti));
-        } else {
-          throw new Error(result.message || 'Errore nel formato dati dal Foglio Google');
+          renderProdotti();
         }
-      } catch (err) {
-        console.warn('Sincronizzazione fallita:', err.message);
-        
-        // Se c'è una cache locale derivante da una precedente sincronizzazione valida, usala
-        const cache = localStorage.getItem('bar_listino_cache');
-        if (cache) {
-          listinoProdotti = JSON.parse(cache);
-        } else {
-          listinoProdotti = []; // Nessun dato statico
-        }
+      } catch (e) {
+        console.error(e);
       } finally {
         if (iconSync) iconSync.classList.remove('fa-spin');
-        renderProdotti();
       }
     }
 
-    // Rendering dell'interfaccia
     function renderProdotti() {
       const container = document.getElementById('lista-prodotti');
       container.innerHTML = '';
 
-      if (!listinoProdotti || listinoProdotti.length === 0) {
-        container.innerHTML = `
-          <div class="flex flex-col items-center justify-center h-64 text-gray-500 text-center p-4">
-            <i class="fa-solid fa-triangle-exclamation text-4xl text-amber-500 mb-3"></i>
-            <p class="font-bold text-base text-gray-700">Nessun prodotto trovato</p>
-            <p class="text-xs text-gray-500 mt-1 max-w-xs">Verifica che l'URL di Google Apps Script sia corretto e che la scheda 'Prodotti' contenga articoli attivi.</p>
-            <button onclick="caricaProdotti()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md active:scale-95">
-              Riprova Sincronizzazione
-            </button>
-          </div>
-        `;
-        return;
-      }
-
-      // Raggruppa per Categoria
       const categorie = {};
       listinoProdotti.forEach(p => {
         const cat = p.categoria || 'Altro';
@@ -188,13 +247,7 @@
       });
 
       for (const [cat, prodotti] of Object.entries(categorie)) {
-        let sectionHtml = `
-          <div>
-            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-              <span>${cat}</span>
-            </h2>
-            <div class="grid grid-cols-2 gap-2.5">
-        `;
+        let sectionHtml = `<div><h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">${cat}</h2><div class="grid grid-cols-2 gap-2.5">`;
 
         prodotti.forEach(p => {
           const qtaInCarrello = carrello[p.nome] ? carrello[p.nome].quantita : 0;
@@ -202,39 +255,21 @@
           const esaurito = giacenzaDisponibile <= 0;
 
           sectionHtml += `
-            <button 
-              onclick="aggiungiProdotto('${p.nome}', ${p.prezzo}, ${p.giacenza})" 
-              ${esaurito ? 'disabled' : ''}
-              class="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 relative text-left flex flex-col justify-between h-22 transition-all ${
-                esaurito 
-                  ? 'opacity-40 bg-gray-100 cursor-not-allowed border-dashed' 
-                  : 'active:scale-95 active:bg-blue-50 hover:border-blue-300'
-              }"
-            >
+            <button onclick="aggiungiProdotto('${p.nome}', ${p.prezzo}, ${p.giacenza})" ${esaurito ? 'disabled' : ''}
+              class="bg-white p-3 rounded-2xl shadow-sm border relative text-left flex flex-col justify-between h-22 transition ${
+                esaurito ? 'opacity-40 bg-gray-100 cursor-not-allowed' : 'active:scale-95 active:bg-blue-50'
+              }">
               <div class="flex justify-between items-start w-full">
-                <div class="flex items-center space-x-1.5 overflow-hidden pr-1">
-                  <i class="fa-solid ${p.icona || 'fa-tag'} text-blue-600 text-sm shrink-0"></i>
-                  <span class="font-bold text-gray-800 text-xs sm:text-sm truncate">${p.nome}</span>
-                </div>
-                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ${
-                  giacenzaDisponibile <= 3 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
-                }">
-                  Giac: ${giacenzaDisponibile}
-                </span>
+                <span class="font-bold text-gray-800 text-xs sm:text-sm truncate">${p.nome}</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${giacenzaDisponibile <= 3 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}">Giac: ${giacenzaDisponibile}</span>
               </div>
-              
               <div class="flex justify-between items-end w-full mt-2">
                 <span class="text-blue-700 font-black text-base">€ ${p.prezzo.toFixed(2).replace('.', ',')}</span>
-                ${qtaInCarrello > 0 ? `
-                  <span class="bg-blue-600 text-white font-extrabold text-xs px-2 py-0.5 rounded-full shadow">
-                    ${qtaInCarrello}
-                  </span>
-                ` : ''}
+                ${qtaInCarrello > 0 ? `<span class="bg-blue-600 text-white font-extrabold text-xs px-2 py-0.5 rounded-full">${qtaInCarrello}</span>` : ''}
               </div>
             </button>
           `;
         });
-
         sectionHtml += `</div></div>`;
         container.innerHTML += sectionHtml;
       }
@@ -243,41 +278,21 @@
     function aggiungiProdotto(nome, prezzo, giacenzaMax) {
       vibra();
       const qtaAttuale = carrello[nome] ? carrello[nome].quantita : 0;
+      if (qtaAttuale >= giacenzaMax) return alert(`Giacenza massima raggiunta per ${nome}`);
 
-      if (qtaAttuale >= giacenzaMax) {
-        alert(`Giacenza massima raggiunta per ${nome}`);
-        return;
-      }
-
-      if (carrello[nome]) {
-        carrello[nome].quantita += 1;
-      } else {
-        carrello[nome] = { prezzo: prezzo, quantita: 1, giacenzaMax: giacenzaMax };
-      }
-
+      if (carrello[nome]) carrello[nome].quantita += 1;
+      else carrello[nome] = { prezzo: prezzo, quantita: 1, giacenzaMax: giacenzaMax };
       aggiornaUI();
     }
 
     function modificaQuantita(nome, delta) {
-      vibra();
       if (carrello[nome]) {
         carrello[nome].quantita += delta;
-        if (carrello[nome].quantita <= 0) {
-          delete carrello[nome];
-        }
+        if (carrello[nome].quantita <= 0) delete carrello[nome];
       }
       aggiornaUI();
       renderModal();
-
-      if (Object.keys(carrello).length === 0) {
-        chiudiModal();
-      }
-    }
-
-    function resetCarrello() {
-      vibra();
-      carrello = {};
-      aggiornaUI();
+      if (Object.keys(carrello).length === 0) chiudiModal('modal-cassa');
     }
 
     function calcolaTotale() {
@@ -287,108 +302,135 @@
     function aggiornaUI() {
       const totale = calcolaTotale();
       document.getElementById('totale-display').innerText = `€ ${totale.toFixed(2).replace('.', ',')}`;
-      
-      const btnIncassa = document.getElementById('btn-incassa');
-      btnIncassa.disabled = totale === 0;
+      document.getElementById('btn-incassa').disabled = totale === 0;
 
       const anteprima = document.getElementById('anteprima-carrello');
       const chiavi = Object.keys(carrello);
-      
       if (chiavi.length === 0) {
         anteprima.innerHTML = '<span class="italic text-gray-400">Nessun articolo nel carrello</span>';
       } else {
         anteprima.innerHTML = chiavi.map(k => `
-          <span class="bg-blue-100 text-blue-800 border border-blue-200 px-2.5 py-1 rounded-full whitespace-nowrap font-bold text-xs flex items-center gap-1">
-            <span class="text-blue-600 font-extrabold">${carrello[k].quantita}x</span> ${k}
-          </span>
+          <button onclick="modificaQuantita('${k}', -1)" class="bg-blue-100 text-blue-800 border border-blue-200 px-2.5 py-1 rounded-full font-bold text-xs flex items-center gap-1.5">
+            <span class="text-blue-600 font-extrabold">${carrello[k].quantita}x</span> ${k} <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>
         `).join('');
       }
-
       renderProdotti();
     }
 
     function apriCassa() {
-      vibra();
       renderModal();
-      const modal = document.getElementById('modal-cassa');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+      document.getElementById('modal-cassa').classList.remove('hidden');
+      document.getElementById('modal-cassa').classList.add('flex');
     }
 
-    function chiudiModal() {
-      const modal = document.getElementById('modal-cassa');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+    function chiudiModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      document.getElementById(id).classList.remove('flex');
     }
 
     function renderModal() {
       const lista = document.getElementById('dettaglio-ordine');
-      const totale = calcolaTotale();
-      document.getElementById('modal-totale').innerText = `€ ${totale.toFixed(2).replace('.', ',')}`;
+      document.getElementById('modal-totale').innerText = `€ ${calcolaTotale().toFixed(2).replace('.', ',')}`;
 
       lista.innerHTML = Object.entries(carrello).map(([nome, item]) => `
         <div class="py-2.5 flex justify-between items-center">
-          <div>
-            <div class="font-bold text-gray-800 text-sm">${nome}</div>
-            <div class="text-xs text-gray-500">€ ${item.prezzo.toFixed(2).replace('.', ',')} cad.</div>
-          </div>
+          <div><div class="font-bold text-gray-800 text-sm">${nome}</div><div class="text-xs text-gray-500">€ ${item.prezzo.toFixed(2)} cad.</div></div>
           <div class="flex items-center space-x-2">
-            <button onclick="modificaQuantita('${nome}', -1)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold flex items-center justify-center text-gray-700 active:scale-90 transition">-</button>
-            <span class="font-bold w-5 text-center text-sm">${item.quantita}</span>
-            <button onclick="modificaQuantita('${nome}', 1)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold flex items-center justify-center text-gray-700 active:scale-90 transition">+</button>
-            <span class="font-extrabold ml-2 text-gray-800 w-16 text-right">€ ${(item.prezzo * item.quantita).toFixed(2).replace('.', ',')}</span>
+            <button onclick="modificaQuantita('${nome}', -1)" class="w-7 h-7 bg-gray-200 rounded-lg font-bold">-</button>
+            <span class="font-bold text-sm w-4 text-center">${item.quantita}</span>
+            <button onclick="modificaQuantita('${nome}', 1)" class="w-7 h-7 bg-gray-200 rounded-lg font-bold">+</button>
+            <span class="font-extrabold text-gray-800 w-14 text-right">€ ${(item.prezzo * item.quantita).toFixed(2)}</span>
           </div>
         </div>
       `).join('');
     }
 
     async function concludiOrdine() {
-      vibra();
       const btnConferma = document.getElementById('btn-conferma');
       btnConferma.disabled = true;
-      btnConferma.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvataggio...`;
 
       const ordine = {
         totale: calcolaTotale(),
         metodoPagamento: 'contanti',
-        articoli: Object.entries(carrello).map(([nome, item]) => ({
-          nome: nome,
-          quantita: item.quantita,
-          prezzo: item.prezzo
-        }))
+        articoli: Object.entries(carrello).map(([nome, item]) => ({ nome: nome, quantita: item.quantita, prezzo: item.prezzo }))
       };
 
       try {
-        if (WEB_APP_URL && !WEB_APP_URL.includes("INSERISCI_QUI")) {
-          await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'registraVendita', ordine: ordine })
-          });
-        }
-
-        // Scala localmente le giacenze per risposta immediata dell'UI
-        ordine.articoli.forEach(art => {
-          const p = listinoProdotti.find(prod => prod.nome === art.nome);
-          if (p) p.giacenza = Math.max(0, p.giacenza - art.quantita);
+        await fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'registraVendita', token: userToken, ordine: ordine })
         });
 
-        localStorage.setItem('bar_listino_cache', JSON.stringify(listinoProdotti));
-
-        chiudiModal();
-        resetCarrello();
-        
-        // Ricarica dal foglio dopo 1 secondo per confermare la sincronizzazione
-        setTimeout(caricaProdotti, 1000);
-
+        chiudiModal('modal-cassa');
+        carrello = {};
+        aggiornaUI();
+        caricaProdotti();
       } catch (err) {
-        alert('Ordine registrato localmente.');
-        chiudiModal();
-        resetCarrello();
+        alert('Errore nel salvataggio vendita');
       } finally {
         btnConferma.disabled = false;
-        btnConferma.innerHTML = `<i class="fa-solid fa-check"></i> CONFERMA E SALVA`;
+      }
+    }
+
+    // GESTIONE PANNELLO ADMIN UTENTI
+    async function apriPannelloAdmin() {
+      document.getElementById('modal-admin').classList.remove('hidden');
+      document.getElementById('modal-admin').classList.add('flex');
+      await caricaUtentiAdmin();
+    }
+
+    async function caricaUtentiAdmin() {
+      const container = document.getElementById('lista-utenti-admin');
+      container.innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+
+      try {
+        const res = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getUtenti', token: userToken })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          container.innerHTML = data.utenti.map(u => `
+            <div class="py-2 flex justify-between items-center">
+              <div>
+                <div class="font-bold text-gray-800">${u.email}</div>
+                <div class="text-[10px] text-gray-500">Aggiunto il: ${u.creato_il}</div>
+              </div>
+              <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${u.ruolo === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
+                ${u.ruolo.toUpperCase()}
+              </span>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        container.innerHTML = '<div class="text-red-500 py-2">Errore nel recupero utenti</div>';
+      }
+    }
+
+    async function salvaUtente(e) {
+      e.preventDefault();
+      const email = document.getElementById('new-user-email').value;
+      const ruolo = document.getElementById('new-user-role').value;
+
+      try {
+        const res = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'salvaUtente', token: userToken, nuovoUtente: { email: email, ruolo: ruolo } })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          document.getElementById('new-user-email').value = '';
+          await caricaUtentiAdmin();
+        } else {
+          alert(data.message);
+        }
+      } catch (err) {
+        alert('Errore durante il salvataggio');
       }
     }
   </script>
