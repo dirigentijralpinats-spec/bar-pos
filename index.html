@@ -28,22 +28,18 @@
     const GOOGLE_CLIENT_ID = "754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com";
   </script>
 
-  <!-- SCHERMATA LOGIN (Se non autenticato) -->
+  <!-- SCHERMATA LOGIN -->
   <div id="screen-login" class="fixed inset-0 bg-blue-900 z-50 flex flex-col items-center justify-center p-4 text-white">
     <div class="bg-white text-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
       <i class="fa-solid fa-baseball text-5xl text-amber-500 mb-3"></i>
-      <h1 class="text-2xl font-black mb-1">Bar Baseball</h1>
+      <h1 class="text-2xl font-black mb-1">Bar Opicina Alpina Baseball</h1>
       <p class="text-xs text-gray-500 mb-6">Accedi con il tuo account Google autorizzato</p>
       
-      <div id="g_id_onload"></div>
-      <div class="flex justify-center">
+      <!-- Contenitore unico per il pulsante Google -->
+      <div class="flex justify-center min-h-[44px]">
         <div id="google-btn-container"></div>
       </div>
-      
-      <div class="flex justify-center">
-        <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with"></div>
-      </div>
-
+  
       <div id="login-error" class="text-red-600 text-xs mt-4 font-bold hidden"></div>
     </div>
   </div>
@@ -157,8 +153,7 @@
     let userToken = null;
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Inizializza l'SDK di Google via JS usando la variabile
-      if (window.google && GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes("INSERISCI_QUI")) {
+      if (window.google && GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes("754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com")) {
         google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: gestisciGoogleLogin
@@ -170,7 +165,6 @@
         );
       }
     
-      // Controlla la sessione esistente
       userToken = sessionStorage.getItem('bar_user_token');
       if (userToken) {
         validaSessione();
@@ -189,25 +183,27 @@
     async function validaSessione() {
       const errBox = document.getElementById('login-error');
       errBox.classList.add('hidden');
-
+    
       try {
+        // Inviamo i dati come payload JSON stringificato
         const res = await fetch(WEB_APP_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Usare text/plain previene il blocco CORS pre-flight di Apps Script
           body: JSON.stringify({ action: 'login', token: userToken })
         });
+        
         const data = await res.json();
-
+    
         if (data.status === 'success') {
           currentUser = data.utente;
           document.getElementById('screen-login').classList.add('hidden');
           document.getElementById('user-email-display').innerText = currentUser.email;
-
+    
           if (currentUser.ruolo === 'admin') {
             document.getElementById('btn-admin-panel').classList.remove('hidden');
             document.getElementById('btn-admin-panel').classList.add('flex');
           }
-
+    
           caricaProdotti();
         } else {
           throw new Error(data.message || 'Accesso non autorizzato');
