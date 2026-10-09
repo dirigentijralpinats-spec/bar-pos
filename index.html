@@ -35,10 +35,9 @@
       <h1 class="text-2xl font-black mb-1">Bar Baseball</h1>
       <p class="text-xs text-gray-500 mb-6">Accedi con il tuo account Google autorizzato</p>
       
-      <div id="g_id_onload"
-           data-client_id=""
-           data-callback="gestisciGoogleLogin"
-           data-auto_prompt="false">
+      <div id="g_id_onload"></div>
+      <div class="flex justify-center">
+        <div id="google-btn-container"></div>
       </div>
       
       <div class="flex justify-center">
@@ -158,11 +157,20 @@
     let userToken = null;
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Inizializza Client ID Google
-      const gEl = document.getElementById('g_id_onload');
-      if (gEl) gEl.setAttribute('data-client_id', GOOGLE_CLIENT_ID);
-
-      // Controlla se c'è un token in sessione
+      // Inizializza l'SDK di Google via JS usando la variabile
+      if (window.google && GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes("INSERISCI_QUI")) {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: gestisciGoogleLogin
+        });
+    
+        google.accounts.id.renderButton(
+          document.getElementById('google-btn-container'),
+          { theme: 'outline', size: 'large', type: 'standard' }
+        );
+      }
+    
+      // Controlla la sessione esistente
       userToken = sessionStorage.getItem('bar_user_token');
       if (userToken) {
         validaSessione();
