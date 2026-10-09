@@ -5,13 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Bar Opicina Alpina Baseball</title>
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- FontAwesome per le icone -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- SDK Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
@@ -26,7 +21,6 @@
 </head>
 <body class="bg-gray-100 h-screen flex flex-col font-sans select-none">
 
-  <!-- CONFIGURAZIONE BACKEND E AUTH -->
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwSUDM4qiukWx7a4QyOnRYZHVCBxmkjL-J5dnDnUsCgdcl9N1HI_LK57-SWNbdcwBCU/exec";
     const GOOGLE_CLIENT_ID = "754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com";
@@ -39,21 +33,13 @@
       <h1 class="text-xl font-black mb-1">Bar Opicina Alpina Baseball</h1>
       <p class="text-xs text-gray-500 mb-6">Accedi con il tuo account Google autorizzato</p>
       
-      <!-- Pulsante Google renderizzato via HTML nativo Google GIS -->
       <div class="flex justify-center min-h-[44px]">
         <div id="g_id_onload"
              data-client_id="754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com"
              data-callback="gestisciGoogleLogin"
              data-auto_prompt="false">
         </div>
-        <div class="g_id_signin" 
-             data-type="standard" 
-             data-size="large" 
-             data-theme="outline" 
-             data-text="sign_in_with" 
-             data-shape="rectangular" 
-             data-logo_alignment="left">
-        </div>
+        <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with"></div>
       </div>
 
       <div id="login-error" class="text-red-600 text-xs mt-4 font-bold hidden"></div>
@@ -153,7 +139,7 @@
 
       <!-- Lista Utenti -->
       <div class="text-xs font-bold text-gray-600 uppercase mb-2">Utenti Autorizzati</div>
-      <div id="lista-utenti-admin" class="overflow-y-auto flex-1 divide-y text-xs mb-3 max-h-48 border rounded-xl p-2 bg-white">
+      <div id="lista-utenti-admin" class="overflow-y-auto flex-1 divide-y text-xs mb-3 max-h-56 border rounded-xl p-2 bg-white">
         <!-- Caricato via JS -->
       </div>
 
@@ -171,7 +157,8 @@
     let isLongPress = false;
 
     document.addEventListener('DOMContentLoaded', () => {
-      userToken = sessionStorage.getItem('bar_user_token');
+      // Uso di localStorage per mantenere attiva la sessione anche riaprendo la pagina
+      userToken = localStorage.getItem('bar_user_token');
       if (userToken) {
         validaSessione();
       }
@@ -181,10 +168,9 @@
       if ('vibrate' in navigator) navigator.vibrate(d); 
     }
 
-    // Callback dopo Login Google
     async function gestisciGoogleLogin(response) {
       userToken = response.credential;
-      sessionStorage.setItem('bar_user_token', userToken);
+      localStorage.setItem('bar_user_token', userToken);
       await validaSessione();
     }
 
@@ -217,13 +203,13 @@
       } catch (err) {
         errBox.innerText = err.message;
         errBox.classList.remove('hidden');
-        sessionStorage.removeItem('bar_user_token');
+        localStorage.removeItem('bar_user_token');
         document.getElementById('screen-login').classList.remove('hidden');
       }
     }
 
     function logout() {
-      sessionStorage.removeItem('bar_user_token');
+      localStorage.removeItem('bar_user_token');
       location.reload();
     }
 
@@ -388,7 +374,7 @@
       vibra(30);
       const btnConferma = document.getElementById('btn-conferma');
       btnConferma.disabled = true;
-    
+
       const ordine = {
         totale: calcolaTotale(),
         metodoPagamento: 'contanti',
@@ -398,25 +384,25 @@
           prezzo: item.prezzo 
         }))
       };
-    
+
       const payload = JSON.stringify({ 
         action: 'registraVendita', 
         token: userToken, 
         ordine: ordine 
       });
-    
-      // 1. Aggiornamento visivo immediato (0 millisecondi di attesa per l'operatore)
+
+      // Aggiornamento visivo immediato
       ordine.articoli.forEach(art => {
         const p = listinoProdotti.find(prod => prod.nome === art.nome);
         if (p) p.giacenza = Math.max(0, p.giacenza - art.quantita);
       });
-    
+
       chiudiModal('modal-cassa');
       carrello = {};
       aggiornaUI();
       btnConferma.disabled = false;
-    
-      // 2. Invio asincrono al Foglio Google in background
+
+      // Salvataggio in background
       try {
         fetch(WEB_APP_URL, {
           method: 'POST',
@@ -429,7 +415,7 @@
       }
     }
 
-    // GESTIONE PANNELLO ADMIN UTENTI
+    // PANNELLO ADMIN UTENTI
     async function apriPannelloAdmin() {
       document.getElementById('modal-admin').classList.remove('hidden');
       document.getElementById('modal-admin').classList.add('flex');
@@ -450,19 +436,59 @@
 
         if (data.status === 'success') {
           container.innerHTML = data.utenti.map(u => `
-            <div class="py-2 flex justify-between items-center">
-              <div>
-                <div class="font-bold text-gray-800">${u.email}</div>
-                <div class="text-[10px] text-gray-500">Aggiunto il: ${u.creato_il}</div>
+            <div class="py-2.5 flex justify-between items-center border-b last:border-0">
+              <div class="pr-2 overflow-hidden">
+                <div class="font-bold text-gray-800 text-xs truncate">${u.email}</div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="px-1.5 py-0.2 rounded font-extrabold text-[9px] ${u.ruolo === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
+                    ${u.ruolo.toUpperCase()}
+                  </span>
+                  <span class="px-1.5 py-0.2 rounded font-bold text-[9px] ${u.stato === 'BLOCCATO' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
+                    ${u.stato}
+                  </span>
+                </div>
               </div>
-              <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${u.ruolo === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
-                ${u.ruolo.toUpperCase()}
-              </span>
+              <div class="flex items-center space-x-1 shrink-0">
+                <button onclick="azioniUtente('${u.email}', 'TOGGLE_STATO')" title="${u.stato === 'ATTIVO' ? 'Blocca' : 'Sblocca'}" 
+                  class="p-1.5 rounded-lg text-xs ${u.stato === 'ATTIVO' ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}">
+                  <i class="fa-solid ${u.stato === 'ATTIVO' ? 'fa-user-slash' : 'fa-user-check'}"></i>
+                </button>
+                <button onclick="azioniUtente('${u.email}', 'DELETE')" title="Elimina" class="p-1.5 rounded-lg text-xs bg-red-100 text-red-700 hover:bg-red-200">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
             </div>
           `).join('');
         }
       } catch (err) {
         container.innerHTML = '<div class="text-red-500 py-2">Errore nel recupero utenti</div>';
+      }
+    }
+
+    async function azioniUtente(emailTarget, operazione) {
+      if (operazione === 'DELETE' && !confirm(`Sei sicuro di voler eliminare definitivamente l'utente ${emailTarget}?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ 
+            action: 'gestisciUtente', 
+            token: userToken, 
+            emailTarget: emailTarget, 
+            operazione: operazione 
+          })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          await caricaUtentiAdmin();
+        } else {
+          alert(data.message);
+        }
+      } catch (err) {
+        alert('Errore durante la gestione utente');
       }
     }
 
