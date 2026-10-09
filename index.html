@@ -388,7 +388,6 @@
       vibra(30);
       const btnConferma = document.getElementById('btn-conferma');
       btnConferma.disabled = true;
-      btnConferma.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvataggio...`;
     
       const ordine = {
         totale: calcolaTotale(),
@@ -406,38 +405,27 @@
         ordine: ordine 
       });
     
+      // 1. Aggiornamento visivo immediato (0 millisecondi di attesa per l'operatore)
+      ordine.articoli.forEach(art => {
+        const p = listinoProdotti.find(prod => prod.nome === art.nome);
+        if (p) p.giacenza = Math.max(0, p.giacenza - art.quantita);
+      });
+    
+      chiudiModal('modal-cassa');
+      carrello = {};
+      aggiornaUI();
+      btnConferma.disabled = false;
+    
+      // 2. Invio asincrono al Foglio Google in background
       try {
-        // Invio con no-cors per evitare che il browser blocchi la redirezione di Apps Script
-        await fetch(WEB_APP_URL, {
+        fetch(WEB_APP_URL, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain' },
           body: payload
         });
-    
-        // Aggiornamento visivo immediato delle giacenze locali
-        ordine.articoli.forEach(art => {
-          const p = listinoProdotti.find(prod => prod.nome === art.nome);
-          if (p) p.giacenza = Math.max(0, p.giacenza - art.quantita);
-        });
-    
-        // Pulisci interfaccia e chiudi il modal
-        chiudiModal('modal-cassa');
-        carrello = {};
-        aggiornaUI();
-        
-        // Sincronizza i dati reali dal foglio dopo 1.5 secondi
-        setTimeout(caricaProdotti, 1500);
-    
-      } catch (err) {
-        console.error("Errore salvataggio:", err);
-        alert('Vendita salvata localmente.');
-        chiudiModal('modal-cassa');
-        carrello = {};
-        aggiornaUI();
-      } finally {
-        btnConferma.disabled = false;
-        btnConferma.innerHTML = `<i class="fa-solid fa-check"></i> CONFERMA INCASSA`;
+      } catch (e) {
+        console.warn("Invio background in corso...", e);
       }
     }
 
