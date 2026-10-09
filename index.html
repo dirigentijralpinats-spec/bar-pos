@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Bar Opicina Alpina Baseball</title>
+  <title>Cassa Bar Baseball</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -26,23 +26,45 @@
 </head>
 <body class="bg-gray-100 h-screen flex flex-col font-sans select-none">
 
-  <!-- CONFIGURAZIONE BACKEND E AUTH -->
+  <!-- CONFIGURAZIONE GLOBALE -->
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwSUDM4qiukWx7a4QyOnRYZHVCBxmkjL-J5dnDnUsCgdcl9N1HI_LK57-SWNbdcwBCU/exec";
     const GOOGLE_CLIENT_ID = "754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com";
+    let CONFIG_SEDI = [];
+    let SEDE_ATTUALE = null;
+    let WEB_APP_URL = "";
   </script>
 
+  <!-- SCHERMATA SELEZIONE SEDE (Prima del Login) -->
+  <div id="screen-select-sede" class="fixed inset-0 bg-blue-900 z-50 flex flex-col items-center justify-center p-4 text-white hidden">
+    <div class="bg-white text-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center flex flex-col items-center">
+      <div class="w-20 h-20 mb-3 rounded-full overflow-hidden shadow-md border-2 border-gray-100 flex items-center justify-center bg-white shrink-0">
+        <img src="logo.png" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23f3f4f6\' stroke=\'%23d1d5db\' stroke-width=\'2\'/><path d=\'M25 15 C 40 40, 40 60, 25 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'3\' stroke-dasharray=\'4 3\'/><path d=\'M75 15 C 60 40, 60 60, 75 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'3\' stroke-dasharray=\'4 3\'/><rect x=\'18\' y=\'38\' width=\'64\' height=\'24\' rx=\'12\' fill=\'%232563eb\'/><text x=\'50\' y=\'54\' font-family=\'sans-serif\' font-weight=\'900\' font-size=\'14\' fill=\'%23f97316\' text-anchor=\'middle\'>Alpina</text></svg>'" alt="Logo" class="w-full h-full object-contain p-0.5">
+      </div>
+      <h1 class="text-xl font-black mb-1 text-gray-900">Seleziona Sede</h1>
+      <p class="text-xs text-gray-500 mb-5">Scegli il punto vendita per iniziare</p>
+      
+      <div id="lista-sedi-container" class="w-full space-y-2.5">
+        <div class="text-gray-400 text-xs py-4 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-spinner fa-spin text-blue-600"></i> Caricamento sedi...
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- SCHERMATA LOGIN -->
-  <div id="screen-login" class="fixed inset-0 bg-blue-900 z-50 flex flex-col items-center justify-center p-4 text-white">
+  <div id="screen-login" class="fixed inset-0 bg-blue-900 z-50 flex flex-col items-center justify-center p-4 text-white hidden">
     <div class="bg-white text-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center flex flex-col items-center">
       
-      <!-- LOGO ALPINA BASEBALL -->
       <div class="w-20 h-20 mb-3 rounded-full overflow-hidden shadow-md border-2 border-gray-100 flex items-center justify-center bg-white shrink-0">
-        <img id="app-logo-login" src="logo.png" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23f3f4f6\' stroke=\'%23d1d5db\' stroke-width=\'2\'/><path d=\'M25 15 C 40 40, 40 60, 25 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'3\' stroke-dasharray=\'4 3\'/><path d=\'M75 15 C 60 40, 60 60, 75 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'3\' stroke-dasharray=\'4 3\'/><rect x=\'18\' y=\'38\' width=\'64\' height=\'24\' rx=\'12\' fill=\'%232563eb\'/><text x=\'50\' y=\'54\' font-family=\'sans-serif\' font-weight=\'900\' font-size=\'14\' fill=\'%23f97316\' text-anchor=\'middle\'>Alpina</text></svg>'" alt="Logo Alpina Baseball" class="w-full h-full object-contain p-0.5">
+        <img id="app-logo-login" src="logo.png" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23f3f4f6\' stroke=\'%23d1d5db\' stroke-width=\'2\'/><path d=\'M25 15 C 40 40, 40 60, 25 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'3\' stroke-dasharray=\'4 3\'/><path d=\'M75 15 C 60 40, 60 60, 75 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'3\' stroke-dasharray=\'4 3\'/><rect x=\'18\' y=\'38\' width=\'64\' height=\'24\' rx=\'12\' fill=\'%232563eb\'/><text x=\'50\' y=\'54\' font-family=\'sans-serif\' font-weight=\'900\' font-size=\'14\' fill=\'%23f97316\' text-anchor=\'middle\'>Alpina</text></svg>'" alt="Logo" class="w-full h-full object-contain p-0.5">
       </div>
 
-      <h1 class="text-xl font-black mb-1 text-gray-900">Bar Opicina Alpina</h1>
-      <p class="text-xs text-gray-500 mb-6">Accedi con il tuo account Google autorizzato</p>
+      <h1 id="login-title-sede" class="text-xl font-black mb-1 text-gray-900">Bar Baseball</h1>
+      <p class="text-xs text-gray-500 mb-4">Accedi con il tuo account Google autorizzato</p>
+      
+      <button onclick="resetSedeSelezionata()" class="text-[11px] text-blue-600 font-bold hover:underline mb-5 flex items-center gap-1">
+        <i class="fa-solid fa-arrow-left"></i> Cambia sede
+      </button>
       
       <!-- Pulsante Google -->
       <div class="flex justify-center min-h-[44px]">
@@ -68,12 +90,11 @@
   <!-- HEADER -->
   <header class="bg-blue-800 text-white p-3 shadow-md flex justify-between items-center shrink-0">
     <div class="flex items-center space-x-2.5">
-      <!-- LOGO HEADER -->
-      <div class="w-8 h-8 rounded-full overflow-hidden border border-blue-400 bg-white flex items-center justify-center shrink-0 shadow-sm">
+      <div class="w-8 h-8 rounded-full overflow-hidden border border-blue-400 bg-white flex items-center justify-center shrink-0 shadow-sm cursor-pointer" onclick="resetSedeSelezionata()" title="Cambia Sede">
         <img id="app-logo-header" src="logo.png" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23ffffff\'/><path d=\'M25 15 C 40 40, 40 60, 25 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'4\'/><path d=\'M75 15 C 60 40, 60 60, 75 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'4\'/><rect x=\'15\' y=\'38\' width=\'70\' height=\'24\' rx=\'12\' fill=\'%232563eb\'/><text x=\'50\' y=\'55\' font-family=\'sans-serif\' font-weight=\'900\' font-size=\'14\' fill=\'%23f97316\' text-anchor=\'middle\'>Alpina</text></svg>'" alt="Logo" class="w-full h-full object-contain">
       </div>
       <div>
-        <h1 class="font-bold text-sm leading-none">Bar Opicina Alpina</h1>
+        <h1 id="header-nome-sede" class="font-bold text-sm leading-none">Bar Baseball</h1>
         <span id="user-email-display" class="text-[10px] text-blue-200 block truncate max-w-[130px]"></span>
       </div>
     </div>
@@ -193,12 +214,87 @@
     let isLongPress = false;
     let metodoPagamentoSelezionato = 'contanti';
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await caricaConfigurazioneSedi();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const sedeUrl = urlParams.get('sede');
+      const sedeSalvata = localStorage.getItem('bar_sede_id');
+
+      const idSedeIniziale = sedeUrl || sedeSalvata;
+
+      if (idSedeIniziale && impostaSede(idSedeIniziale)) {
+        avviaApp();
+      } else {
+        mostraSelezioneSede();
+      }
+    });
+
+    async function caricaConfigurazioneSedi() {
+      try {
+        const res = await fetch('./sedi.json?v=' + Date.now());
+        const data = await res.json();
+        CONFIG_SEDI = data.sedi || [];
+      } catch (err) {
+        console.error("Errore carica sedi.json:", err);
+      }
+    }
+
+    function impostaSede(idSede) {
+      const trovata = CONFIG_SEDI.find(s => s.id === idSede);
+      if (!trovata) return false;
+
+      SEDE_ATTUALE = trovata;
+      WEB_APP_URL = trovata.webAppUrl;
+      localStorage.setItem('bar_sede_id', trovata.id);
+
+      document.getElementById('header-nome-sede').innerText = trovata.nome;
+      document.getElementById('login-title-sede').innerText = trovata.nome;
+
+      return true;
+    }
+
+    function mostraSelezioneSede() {
+      const screenSede = document.getElementById('screen-select-sede');
+      const container = document.getElementById('lista-sedi-container');
+      
+      screenSede.classList.remove('hidden');
+
+      if (CONFIG_SEDI.length === 0) {
+        container.innerHTML = '<div class="text-red-500 text-xs py-2">Impossibile caricare le sedi. Controlla il file sedi.json</div>';
+        return;
+      }
+
+      container.innerHTML = CONFIG_SEDI.map(s => `
+        <button onclick="selezionaSedeEProsegui('${s.id}')" 
+          class="w-full bg-gray-50 hover:bg-blue-50 border-2 border-gray-200 hover:border-blue-500 p-3.5 rounded-xl text-left transition flex items-center justify-between group">
+          <span class="font-bold text-gray-800 group-hover:text-blue-700 text-sm">${s.nome}</span>
+          <i class="fa-solid fa-chevron-right text-gray-400 group-hover:text-blue-600 text-xs"></i>
+        </button>
+      `).join('');
+    }
+
+    function selezionaSedeEProsegui(idSede) {
+      vibra(20);
+      impostaSede(idSede);
+      document.getElementById('screen-select-sede').classList.add('hidden');
+      avviaApp();
+    }
+
+    function resetSedeSelezionata() {
+      localStorage.removeItem('bar_sede_id');
+      localStorage.removeItem('bar_user_token');
+      location.reload();
+    }
+
+    function avviaApp() {
       userToken = localStorage.getItem('bar_user_token');
       if (userToken) {
         validaSessione();
+      } else {
+        document.getElementById('screen-login').classList.remove('hidden');
       }
-    });
+    }
 
     function vibra(d = 25) { 
       if ('vibrate' in navigator) navigator.vibrate(d); 
@@ -395,7 +491,7 @@
     }
 
     function apriCassa() {
-      selezionaMetodoPagamento('contanti'); // Default
+      selezionaMetodoPagamento('contanti');
       renderModal();
       document.getElementById('modal-cassa').classList.remove('hidden');
       document.getElementById('modal-cassa').classList.add('flex');
@@ -430,7 +526,7 @@
 
       const ordine = {
         totale: calcolaTotale(),
-        metodoPagamento: metodoPagamentoSelezionato, // 'contanti' o 'elettronico'
+        metodoPagamento: metodoPagamentoSelezionato,
         articoli: Object.entries(carrello).map(([nome, item]) => ({ 
           nome: nome, 
           quantita: item.quantita, 
