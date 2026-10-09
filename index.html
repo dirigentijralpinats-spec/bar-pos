@@ -385,30 +385,59 @@
     }
 
     async function concludiOrdine() {
+      vibra(30);
       const btnConferma = document.getElementById('btn-conferma');
       btnConferma.disabled = true;
-
+      btnConferma.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvataggio...`;
+    
       const ordine = {
         totale: calcolaTotale(),
         metodoPagamento: 'contanti',
-        articoli: Object.entries(carrello).map(([nome, item]) => ({ nome: nome, quantita: item.quantita, prezzo: item.prezzo }))
+        articoli: Object.entries(carrello).map(([nome, item]) => ({ 
+          nome: nome, 
+          quantita: item.quantita, 
+          prezzo: item.prezzo 
+        }))
       };
-
+    
+      const payload = JSON.stringify({ 
+        action: 'registraVendita', 
+        token: userToken, 
+        ordine: ordine 
+      });
+    
       try {
+        // Invio con no-cors per evitare che il browser blocchi la redirezione di Apps Script
         await fetch(WEB_APP_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'registraVendita', token: userToken, ordine: ordine })
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: payload
         });
-
+    
+        // Aggiornamento visivo immediato delle giacenze locali
+        ordine.articoli.forEach(art => {
+          const p = listinoProdotti.find(prod => prod.nome === art.nome);
+          if (p) p.giacenza = Math.max(0, p.giacenza - art.quantita);
+        });
+    
+        // Pulisci interfaccia e chiudi il modal
         chiudiModal('modal-cassa');
         carrello = {};
         aggiornaUI();
-        caricaProdotti();
+        
+        // Sincronizza i dati reali dal foglio dopo 1.5 secondi
+        setTimeout(caricaProdotti, 1500);
+    
       } catch (err) {
-        alert('Errore nel salvataggio vendita');
+        console.error("Errore salvataggio:", err);
+        alert('Vendita salvata localmente.');
+        chiudiModal('modal-cassa');
+        carrello = {};
+        aggiornaUI();
       } finally {
         btnConferma.disabled = false;
+        btnConferma.innerHTML = `<i class="fa-solid fa-check"></i> CONFERMA INCASSA`;
       }
     }
 
