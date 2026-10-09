@@ -1,0 +1,14 @@
+{
+  "sedi": [
+    {
+      "id": "opicina",
+      "nome": "Bar Opicina Alpina",
+      "webAppUrl": "https://script.google.com/macros/s/AKfycbwSUDM4qiukWx7a4QyOnRYZHVCBxmkjL-J5dnDnUsCgdcl9N1HI_LK57-SWNbdcwBCU/exec"
+    },
+    {
+      "id": "prosecco",
+      "nome": "Bar Prosecco Alpina",
+      "webAppUrl": "https://script.google.com/macros/s/AKfycbzqnjkaFFR4UbgBAU2r8sBI8aTS62Tbg5AWRgK_EuEzyllaaC4IPI7TqOpdI9EdySZ6Ig/exec"
+    }
+  ]
+}
