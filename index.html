@@ -469,7 +469,7 @@
       if (operazione === 'DELETE' && !confirm(`Sei sicuro di voler eliminare definitivamente l'utente ${emailTarget}?`)) {
         return;
       }
-
+    
       try {
         const res = await fetch(WEB_APP_URL, {
           method: 'POST',
@@ -481,14 +481,23 @@
             operazione: operazione 
           })
         });
-        const data = await res.json();
+        
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          throw new Error("Risposta server non valida");
+        }
+    
         if (data.status === 'success') {
           await caricaUtentiAdmin();
         } else {
-          alert(data.message);
+          alert(data.message || 'Operazione non riuscita');
         }
       } catch (err) {
-        alert('Errore durante la gestione utente');
+        console.error("Dettaglio errore:", err);
+        alert('Errore durante la gestione utente: ' + err.message);
       }
     }
 
@@ -496,22 +505,29 @@
       e.preventDefault();
       const email = document.getElementById('new-user-email').value;
       const ruolo = document.getElementById('new-user-role').value;
-
+    
       try {
         const res = await fetch(WEB_APP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'salvaUtente', token: userToken, nuovoUtente: { email: email, ruolo: ruolo } })
+          body: JSON.stringify({ 
+            action: 'salvaUtente', 
+            token: userToken, 
+            nuovoUtente: { email: email, ruolo: ruolo } 
+          })
         });
-        const data = await res.json();
+    
+        const text = await res.text();
+        const data = JSON.parse(text);
+    
         if (data.status === 'success') {
           document.getElementById('new-user-email').value = '';
           await caricaUtentiAdmin();
         } else {
-          alert(data.message);
+          alert(data.message || 'Errore durante il salvataggio');
         }
       } catch (err) {
-        alert('Errore durante il salvataggio');
+        alert('Errore di comunicazione con il server');
       }
     }
   </script>
