@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Cassa Bar Baseball</title>
+  <title>Bar Opicina Alpina Baseball</title>
   
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome per le icone -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- SDK Google Login -->
+  <!-- SDK Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
@@ -23,6 +26,7 @@
 </head>
 <body class="bg-gray-100 h-screen flex flex-col font-sans select-none">
 
+  <!-- CONFIGURAZIONE BACKEND E AUTH -->
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwSUDM4qiukWx7a4QyOnRYZHVCBxmkjL-J5dnDnUsCgdcl9N1HI_LK57-SWNbdcwBCU/exec";
     const GOOGLE_CLIENT_ID = "754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com";
@@ -32,14 +36,26 @@
   <div id="screen-login" class="fixed inset-0 bg-blue-900 z-50 flex flex-col items-center justify-center p-4 text-white">
     <div class="bg-white text-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
       <i class="fa-solid fa-baseball text-5xl text-amber-500 mb-3"></i>
-      <h1 class="text-2xl font-black mb-1">Bar Opicina Alpina Baseball</h1>
+      <h1 class="text-xl font-black mb-1">Bar Opicina Alpina Baseball</h1>
       <p class="text-xs text-gray-500 mb-6">Accedi con il tuo account Google autorizzato</p>
       
-      <!-- Contenitore unico per il pulsante Google -->
+      <!-- Pulsante Google renderizzato via HTML nativo Google GIS -->
       <div class="flex justify-center min-h-[44px]">
-        <div id="google-btn-container"></div>
+        <div id="g_id_onload"
+             data-client_id="754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com"
+             data-callback="gestisciGoogleLogin"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin" 
+             data-type="standard" 
+             data-size="large" 
+             data-theme="outline" 
+             data-text="sign_in_with" 
+             data-shape="rectangular" 
+             data-logo_alignment="left">
+        </div>
       </div>
-  
+
       <div id="login-error" class="text-red-600 text-xs mt-4 font-bold hidden"></div>
     </div>
   </div>
@@ -49,7 +65,7 @@
     <div class="flex items-center space-x-2">
       <i class="fa-solid fa-baseball text-xl text-amber-400"></i>
       <div>
-        <h1 class="font-bold text-sm leading-none">Bar Baseball</h1>
+        <h1 class="font-bold text-sm leading-none">Bar Opicina Alpina</h1>
         <span id="user-email-display" class="text-[10px] text-blue-200 block truncate max-w-[130px]"></span>
       </div>
     </div>
@@ -106,7 +122,7 @@
         <span id="modal-totale" class="text-2xl text-green-600 font-black">€ 0,00</span>
       </div>
       <button onclick="concludiOrdine()" id="btn-conferma" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold text-lg shadow-md flex items-center justify-center gap-2 mb-2">
-        <i class="fa-solid fa-check"></i> <span>CONFERMA INCASSO</span>
+        <i class="fa-solid fa-check"></i> <span>CONFERMA INCASSA</span>
       </button>
       <button onclick="chiudiModal('modal-cassa')" class="w-full bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm">Torna Indietro</button>
     </div>
@@ -151,29 +167,21 @@
     let carrello = {};
     let currentUser = null;
     let userToken = null;
+    let pressTimer = null;
+    let isLongPress = false;
 
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.google && GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes("754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com")) {
-        google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: gestisciGoogleLogin
-        });
-    
-        google.accounts.id.renderButton(
-          document.getElementById('google-btn-container'),
-          { theme: 'outline', size: 'large', type: 'standard' }
-        );
-      }
-    
       userToken = sessionStorage.getItem('bar_user_token');
       if (userToken) {
         validaSessione();
       }
     });
 
-    function vibra(d = 25) { if ('vibrate' in navigator) navigator.vibrate(d); }
+    function vibra(d = 25) { 
+      if ('vibrate' in navigator) navigator.vibrate(d); 
+    }
 
-    // Callback scattata dopo il Login Google
+    // Callback dopo Login Google
     async function gestisciGoogleLogin(response) {
       userToken = response.credential;
       sessionStorage.setItem('bar_user_token', userToken);
@@ -183,27 +191,25 @@
     async function validaSessione() {
       const errBox = document.getElementById('login-error');
       errBox.classList.add('hidden');
-    
+
       try {
-        // Inviamo i dati come payload JSON stringificato
         const res = await fetch(WEB_APP_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Usare text/plain previene il blocco CORS pre-flight di Apps Script
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'login', token: userToken })
         });
-        
         const data = await res.json();
-    
+
         if (data.status === 'success') {
           currentUser = data.utente;
           document.getElementById('screen-login').classList.add('hidden');
           document.getElementById('user-email-display').innerText = currentUser.email;
-    
+
           if (currentUser.ruolo === 'admin') {
             document.getElementById('btn-admin-panel').classList.remove('hidden');
             document.getElementById('btn-admin-panel').classList.add('flex');
           }
-    
+
           caricaProdotti();
         } else {
           throw new Error(data.message || 'Accesso non autorizzato');
@@ -259,12 +265,20 @@
           const esaurito = giacenzaDisponibile <= 0;
 
           sectionHtml += `
-            <button onclick="aggiungiProdotto('${p.nome}', ${p.prezzo}, ${p.giacenza})" ${esaurito ? 'disabled' : ''}
-              class="bg-white p-3 rounded-2xl shadow-sm border relative text-left flex flex-col justify-between h-22 transition ${
-                esaurito ? 'opacity-40 bg-gray-100 cursor-not-allowed' : 'active:scale-95 active:bg-blue-50'
+            <button 
+              onpointerdown="startPress('${p.nome}', ${p.prezzo}, ${p.giacenza})" 
+              onpointerup="endPress('${p.nome}', ${p.prezzo}, ${p.giacenza})" 
+              onpointerleave="cancelPress()"
+              oncontextmenu="return false;"
+              ${esaurito ? 'disabled' : ''}
+              class="bg-white p-3 rounded-2xl shadow-sm border relative text-left flex flex-col justify-between h-22 transition select-none ${
+                esaurito ? 'opacity-40 bg-gray-100 cursor-not-allowed border-dashed' : 'active:scale-95 active:bg-blue-50'
               }">
               <div class="flex justify-between items-start w-full">
-                <span class="font-bold text-gray-800 text-xs sm:text-sm truncate">${p.nome}</span>
+                <div class="flex items-center space-x-1.5 overflow-hidden pr-1">
+                  <i class="fa-solid ${p.icona || 'fa-tag'} text-blue-600 text-sm shrink-0"></i>
+                  <span class="font-bold text-gray-800 text-xs sm:text-sm truncate">${p.nome}</span>
+                </div>
                 <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${giacenzaDisponibile <= 3 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}">Giac: ${giacenzaDisponibile}</span>
               </div>
               <div class="flex justify-between items-end w-full mt-2">
@@ -279,8 +293,28 @@
       }
     }
 
+    function startPress(nome, prezzo, giacenzaMax) {
+      isLongPress = false;
+      pressTimer = setTimeout(() => {
+        isLongPress = true;
+        modificaQuantita(nome, -1);
+        vibra(60);
+      }, 500);
+    }
+
+    function endPress(nome, prezzo, giacenzaMax) {
+      clearTimeout(pressTimer);
+      if (!isLongPress) {
+        aggiungiProdotto(nome, prezzo, giacenzaMax);
+      }
+    }
+
+    function cancelPress() {
+      clearTimeout(pressTimer);
+    }
+
     function aggiungiProdotto(nome, prezzo, giacenzaMax) {
-      vibra();
+      vibra(25);
       const qtaAttuale = carrello[nome] ? carrello[nome].quantita : 0;
       if (qtaAttuale >= giacenzaMax) return alert(`Giacenza massima raggiunta per ${nome}`);
 
@@ -339,12 +373,12 @@
 
       lista.innerHTML = Object.entries(carrello).map(([nome, item]) => `
         <div class="py-2.5 flex justify-between items-center">
-          <div><div class="font-bold text-gray-800 text-sm">${nome}</div><div class="text-xs text-gray-500">€ ${item.prezzo.toFixed(2)} cad.</div></div>
+          <div><div class="font-bold text-gray-800 text-sm">${nome}</div><div class="text-xs text-gray-500">€ ${item.prezzo.toFixed(2).replace('.', ',')} cad.</div></div>
           <div class="flex items-center space-x-2">
-            <button onclick="modificaQuantita('${nome}', -1)" class="w-7 h-7 bg-gray-200 rounded-lg font-bold">-</button>
+            <button onclick="modificaQuantita('${nome}', -1)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold flex items-center justify-center text-gray-700 active:scale-90 transition">-</button>
             <span class="font-bold text-sm w-4 text-center">${item.quantita}</span>
-            <button onclick="modificaQuantita('${nome}', 1)" class="w-7 h-7 bg-gray-200 rounded-lg font-bold">+</button>
-            <span class="font-extrabold text-gray-800 w-14 text-right">€ ${(item.prezzo * item.quantita).toFixed(2)}</span>
+            <button onclick="modificaQuantita('${nome}', 1)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold flex items-center justify-center text-gray-700 active:scale-90 transition">+</button>
+            <span class="font-extrabold text-gray-800 w-16 text-right">€ ${(item.prezzo * item.quantita).toFixed(2).replace('.', ',')}</span>
           </div>
         </div>
       `).join('');
@@ -363,7 +397,7 @@
       try {
         await fetch(WEB_APP_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'registraVendita', token: userToken, ordine: ordine })
         });
 
@@ -392,7 +426,7 @@
       try {
         const res = await fetch(WEB_APP_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'getUtenti', token: userToken })
         });
         const data = await res.json();
@@ -423,7 +457,7 @@
       try {
         const res = await fetch(WEB_APP_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'salvaUtente', token: userToken, nuovoUtente: { email: email, ruolo: ruolo } })
         });
         const data = await res.json();
