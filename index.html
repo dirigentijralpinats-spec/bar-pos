@@ -30,9 +30,6 @@
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwSUDM4qiukWx7a4QyOnRYZHVCBxmkjL-J5dnDnUsCgdcl9N1HI_LK57-SWNbdcwBCU/exec";
     const GOOGLE_CLIENT_ID = "754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com";
-    
-    // URL dell'immagine del logo Alpina Baseball
-    const LOGO_ALPINA_URL = "logo.png"; // Puoi salvare l'immagine caricata come 'logo.png' nella stessa cartella oppure usare un URL pubblico
   </script>
 
   <!-- SCHERMATA LOGIN -->
@@ -127,13 +124,31 @@
         </h3>
         <button onclick="chiudiModal('modal-cassa')" class="text-gray-400 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div id="dettaglio-ordine" class="overflow-y-auto flex-1 divide-y text-sm mb-3 max-h-56"></div>
+      
+      <div id="dettaglio-ordine" class="overflow-y-auto flex-1 divide-y text-sm mb-3 max-h-48"></div>
+      
+      <!-- SELEZIONE METODO DI PAGAMENTO -->
+      <div class="bg-gray-50 p-3 rounded-xl mb-3 border border-gray-100">
+        <label class="text-xs font-bold text-gray-600 uppercase mb-1.5 block">Metodo di Pagamento</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="selezionaMetodoPagamento('contanti')" id="btn-pay-contanti" 
+            class="py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition bg-blue-600 text-white border-blue-600 shadow-sm">
+            <i class="fa-solid fa-money-bill-wave"></i> Contanti
+          </button>
+          <button type="button" onclick="selezionaMetodoPagamento('elettronico')" id="btn-pay-elettronico" 
+            class="py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition bg-white text-gray-700 border-gray-300 hover:bg-gray-100">
+            <i class="fa-solid fa-credit-card"></i> Elettronico
+          </button>
+        </div>
+      </div>
+
       <div class="bg-gray-50 p-3 rounded-xl mb-4 border border-gray-100 flex justify-between items-center font-bold text-lg text-gray-800">
         <span>Totale da Pagare:</span>
         <span id="modal-totale" class="text-2xl text-green-600 font-black">€ 0,00</span>
       </div>
+      
       <button onclick="concludiOrdine()" id="btn-conferma" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold text-lg shadow-md flex items-center justify-center gap-2 mb-2">
-        <i class="fa-solid fa-check"></i> <span>CONFERMA INCASSA</span>
+        <i class="fa-solid fa-check"></i> <span>CONFERMA INCASSO</span>
       </button>
       <button onclick="chiudiModal('modal-cassa')" class="w-full bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm">Torna Indietro</button>
     </div>
@@ -149,7 +164,6 @@
         <button onclick="chiudiModal('modal-admin')" class="text-gray-400 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <!-- Form aggiunta utente -->
       <form onsubmit="salvaUtente(event)" class="bg-gray-50 p-3 rounded-xl mb-4 space-y-2 border">
         <div class="text-xs font-bold text-gray-600 uppercase">Aggiungi / Modifica Utente</div>
         <input type="email" id="new-user-email" required placeholder="Email Google (es. nome@gmail.com)" class="w-full text-xs p-2.5 border rounded-lg bg-white">
@@ -162,11 +176,8 @@
         </div>
       </form>
 
-      <!-- Lista Utenti -->
       <div class="text-xs font-bold text-gray-600 uppercase mb-2">Utenti Autorizzati</div>
-      <div id="lista-utenti-admin" class="overflow-y-auto flex-1 divide-y text-xs mb-3 max-h-56 border rounded-xl p-2 bg-white">
-        <!-- Caricato via JS -->
-      </div>
+      <div id="lista-utenti-admin" class="overflow-y-auto flex-1 divide-y text-xs mb-3 max-h-56 border rounded-xl p-2 bg-white"></div>
 
       <button onclick="chiudiModal('modal-admin')" class="w-full bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm">Chiudi</button>
     </div>
@@ -180,6 +191,7 @@
     let userToken = null;
     let pressTimer = null;
     let isLongPress = false;
+    let metodoPagamentoSelezionato = 'contanti';
 
     document.addEventListener('DOMContentLoaded', () => {
       userToken = localStorage.getItem('bar_user_token');
@@ -366,7 +378,24 @@
       renderProdotti();
     }
 
+    function selezionaMetodoPagamento(metodo) {
+      metodoPagamentoSelezionato = metodo;
+      vibra(15);
+
+      const btnContanti = document.getElementById('btn-pay-contanti');
+      const btnElettronico = document.getElementById('btn-pay-elettronico');
+
+      if (metodo === 'contanti') {
+        btnContanti.className = "py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition bg-blue-600 text-white border-blue-600 shadow-sm";
+        btnElettronico.className = "py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition bg-white text-gray-700 border-gray-300 hover:bg-gray-100";
+      } else {
+        btnContanti.className = "py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition bg-white text-gray-700 border-gray-300 hover:bg-gray-100";
+        btnElettronico.className = "py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition bg-blue-600 text-white border-blue-600 shadow-sm";
+      }
+    }
+
     function apriCassa() {
+      selezionaMetodoPagamento('contanti'); // Default
       renderModal();
       document.getElementById('modal-cassa').classList.remove('hidden');
       document.getElementById('modal-cassa').classList.add('flex');
@@ -401,7 +430,7 @@
 
       const ordine = {
         totale: calcolaTotale(),
-        metodoPagamento: 'contanti',
+        metodoPagamento: metodoPagamentoSelezionato, // 'contanti' o 'elettronico'
         articoli: Object.entries(carrello).map(([nome, item]) => ({ 
           nome: nome, 
           quantita: item.quantita, 
