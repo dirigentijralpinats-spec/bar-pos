@@ -5,8 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Bar Opicina Alpina Baseball</title>
   
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome per le icone -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SDK Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
@@ -21,25 +26,42 @@
 </head>
 <body class="bg-gray-100 h-screen flex flex-col font-sans select-none">
 
+  <!-- CONFIGURAZIONE BACKEND E AUTH -->
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwSUDM4qiukWx7a4QyOnRYZHVCBxmkjL-J5dnDnUsCgdcl9N1HI_LK57-SWNbdcwBCU/exec";
     const GOOGLE_CLIENT_ID = "754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com";
+    
+    // URL dell'immagine del logo Alpina Baseball
+    const LOGO_ALPINA_URL = "logo.png"; // Puoi salvare l'immagine caricata come 'logo.png' nella stessa cartella oppure usare un URL pubblico
   </script>
 
   <!-- SCHERMATA LOGIN -->
   <div id="screen-login" class="fixed inset-0 bg-blue-900 z-50 flex flex-col items-center justify-center p-4 text-white">
-    <div class="bg-white text-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
-      <i class="fa-solid fa-baseball text-5xl text-amber-500 mb-3"></i>
-      <h1 class="text-xl font-black mb-1">Bar Opicina Alpina Baseball</h1>
+    <div class="bg-white text-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center flex flex-col items-center">
+      
+      <!-- LOGO ALPINA BASEBALL -->
+      <div class="w-20 h-20 mb-3 rounded-full overflow-hidden shadow-md border-2 border-gray-100 flex items-center justify-center bg-white shrink-0">
+        <img id="app-logo-login" src="logo.png" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23f3f4f6\' stroke=\'%23d1d5db\' stroke-width=\'2\'/><path d=\'M25 15 C 40 40, 40 60, 25 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'3\' stroke-dasharray=\'4 3\'/><path d=\'M75 15 C 60 40, 60 60, 75 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'3\' stroke-dasharray=\'4 3\'/><rect x=\'18\' y=\'38\' width=\'64\' height=\'24\' rx=\'12\' fill=\'%232563eb\'/><text x=\'50\' y=\'54\' font-family=\'sans-serif\' font-weight=\'900\' font-size=\'14\' fill=\'%23f97316\' text-anchor=\'middle\'>Alpina</text></svg>'" alt="Logo Alpina Baseball" class="w-full h-full object-contain p-0.5">
+      </div>
+
+      <h1 class="text-xl font-black mb-1 text-gray-900">Bar Opicina Alpina</h1>
       <p class="text-xs text-gray-500 mb-6">Accedi con il tuo account Google autorizzato</p>
       
+      <!-- Pulsante Google -->
       <div class="flex justify-center min-h-[44px]">
         <div id="g_id_onload"
              data-client_id="754971538308-edcgicb08p38ocnm7hoanoa0ohep4772.apps.googleusercontent.com"
              data-callback="gestisciGoogleLogin"
              data-auto_prompt="false">
         </div>
-        <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with"></div>
+        <div class="g_id_signin" 
+             data-type="standard" 
+             data-size="large" 
+             data-theme="outline" 
+             data-text="sign_in_with" 
+             data-shape="rectangular" 
+             data-logo_alignment="left">
+        </div>
       </div>
 
       <div id="login-error" class="text-red-600 text-xs mt-4 font-bold hidden"></div>
@@ -48,8 +70,11 @@
 
   <!-- HEADER -->
   <header class="bg-blue-800 text-white p-3 shadow-md flex justify-between items-center shrink-0">
-    <div class="flex items-center space-x-2">
-      <i class="fa-solid fa-baseball text-xl text-amber-400"></i>
+    <div class="flex items-center space-x-2.5">
+      <!-- LOGO HEADER -->
+      <div class="w-8 h-8 rounded-full overflow-hidden border border-blue-400 bg-white flex items-center justify-center shrink-0 shadow-sm">
+        <img id="app-logo-header" src="logo.png" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23ffffff\'/><path d=\'M25 15 C 40 40, 40 60, 25 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'4\'/><path d=\'M75 15 C 60 40, 60 60, 75 85\' fill=\'none\' stroke=\'%23dc2626\' stroke-width=\'4\'/><rect x=\'15\' y=\'38\' width=\'70\' height=\'24\' rx=\'12\' fill=\'%232563eb\'/><text x=\'50\' y=\'55\' font-family=\'sans-serif\' font-weight=\'900\' font-size=\'14\' fill=\'%23f97316\' text-anchor=\'middle\'>Alpina</text></svg>'" alt="Logo" class="w-full h-full object-contain">
+      </div>
       <div>
         <h1 class="font-bold text-sm leading-none">Bar Opicina Alpina</h1>
         <span id="user-email-display" class="text-[10px] text-blue-200 block truncate max-w-[130px]"></span>
@@ -157,7 +182,6 @@
     let isLongPress = false;
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Uso di localStorage per mantenere attiva la sessione anche riaprendo la pagina
       userToken = localStorage.getItem('bar_user_token');
       if (userToken) {
         validaSessione();
@@ -469,7 +493,7 @@
       if (operazione === 'DELETE' && !confirm(`Sei sicuro di voler eliminare definitivamente l'utente ${emailTarget}?`)) {
         return;
       }
-    
+
       try {
         const res = await fetch(WEB_APP_URL, {
           method: 'POST',
@@ -484,19 +508,14 @@
         
         const text = await res.text();
         let data;
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          throw new Error("Risposta server non valida");
-        }
-    
+        try { data = JSON.parse(text); } catch (e) { throw new Error("Risposta server non valida"); }
+
         if (data.status === 'success') {
           await caricaUtentiAdmin();
         } else {
           alert(data.message || 'Operazione non riuscita');
         }
       } catch (err) {
-        console.error("Dettaglio errore:", err);
         alert('Errore durante la gestione utente: ' + err.message);
       }
     }
@@ -505,21 +524,16 @@
       e.preventDefault();
       const email = document.getElementById('new-user-email').value;
       const ruolo = document.getElementById('new-user-role').value;
-    
+
       try {
         const res = await fetch(WEB_APP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ 
-            action: 'salvaUtente', 
-            token: userToken, 
-            nuovoUtente: { email: email, ruolo: ruolo } 
-          })
+          body: JSON.stringify({ action: 'salvaUtente', token: userToken, nuovoUtente: { email: email, ruolo: ruolo } })
         });
-    
         const text = await res.text();
         const data = JSON.parse(text);
-    
+
         if (data.status === 'success') {
           document.getElementById('new-user-email').value = '';
           await caricaUtentiAdmin();
@@ -527,7 +541,7 @@
           alert(data.message || 'Errore durante il salvataggio');
         }
       } catch (err) {
-        alert('Errore di comunicazione con il server');
+        alert('Errore durante il salvataggio');
       }
     }
   </script>
